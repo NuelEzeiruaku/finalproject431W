@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NittanyAuction Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fb;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 420px;
+      margin: 80px auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    p.sub {
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 22px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 18px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .error {
+      color: #b91c1c;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .note {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>NittanyAuction Login</h2>
+    <p class="sub">Phase 2 Progress Review Demo</p>
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+      <label for="email">Email</label>
+      <input id="email" type="text" name="email" placeholder="Enter your email" required>
+
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" placeholder="Enter your password" required>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <div class="note">
+      Passwords are checked against hashed values stored in the database.
+      Different roles are redirected to different welcome pages.
+    </div>
+  </div>
+</body>
+</html>
