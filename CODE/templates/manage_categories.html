@@ -22,18 +22,19 @@
 
   <div class="card">
     <h3 style="color:#1e3a5f;margin-bottom:16px;">Add New Category</h3>
+    {% if errors.general %}<div class="alert alert-error">{{ errors.general }}</div>{% endif %}
     <form method="post">
       <div class="form-group">
         <label>Category Name *</label>
-        <input type="text" name="name" required>
-        {% if errors.name %}<p class="field-error">{{ errors.name }}</p>{% endif %}
+        <input type="text" name="category_name" required>
+        {% if errors.category_name %}<p class="field-error">{{ errors.category_name }}</p>{% endif %}
       </div>
       <div class="form-group">
         <label>Parent Category (leave blank for top-level)</label>
-        <select name="parent_id">
+        <select name="parent_category">
           <option value="">— Top Level —</option>
           {% for c in all_cats %}
-          <option value="{{ c.category_id }}">{{ c.name }}</option>
+          <option value="{{ c.category_name }}">{{ c.category_name }}</option>
           {% endfor %}
         </select>
       </div>
