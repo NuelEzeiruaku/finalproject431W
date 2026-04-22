@@ -3,12 +3,22 @@ from pathlib import Path
 from datetime import datetime
 import random
 
-BASE_DIR     = Path(__file__).resolve().parent
-DB_PATH      = BASE_DIR / "database.db"
-USERS_CSV    = BASE_DIR / "Users.csv"
-SELLERS_CSV  = BASE_DIR / "Sellers.csv"
-BIDDERS_CSV  = BASE_DIR / "Bidders.csv"
-HELPDESK_CSV = BASE_DIR / "Helpdesk.csv"
+BASE_DIR          = Path(__file__).resolve().parent
+DB_PATH           = BASE_DIR / "database.db"
+USERS_CSV         = BASE_DIR / "Users.csv"
+SELLERS_CSV       = BASE_DIR / "Sellers.csv"
+BIDDERS_CSV       = BASE_DIR / "Bidders.csv"
+HELPDESK_CSV      = BASE_DIR / "Helpdesk.csv"
+ADDRESS_CSV = BASE_DIR / "Address.csv"
+ZIPCODE_CSV = BASE_DIR / "Zipcode_Info.csv"
+CREDIT_CARDS_CSV = BASE_DIR / "Credit_Cards.csv"
+LOCAL_VENDORS_CSV = BASE_DIR / "Local_Vendors.csv"
+CATEGORIES_CSV = BASE_DIR / "Categories.csv"
+LISTINGS_CSV = BASE_DIR / "Auction_Listings.csv"
+BIDS_CSV = BASE_DIR / "Bids.csv"
+TRANSACTIONS_CSV = BASE_DIR / "Transactions.csv"
+RATINGS_CSV = BASE_DIR / "Ratings.csv"
+REQUESTS_CSV = BASE_DIR / "Requests.csv"
 
 
 def hash_password(p):
@@ -65,7 +75,7 @@ def create_tables(conn):
 
     cur.execute("""
         CREATE TABLE Address (
-            address_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+            address_id  TEXT PRIMARY KEY,
             zipcode     TEXT REFERENCES Zipcode_Info(zipcode),
             street_num  TEXT,
             street_name TEXT
@@ -195,20 +205,16 @@ def create_tables(conn):
 
 def populate_users(conn):
     rows = load_csv(USERS_CSV)
-    sellers_emails  = {r.get("email","").strip() for r in load_csv(SELLERS_CSV)}
-    bidders_emails  = {r.get("email","").strip() for r in load_csv(BIDDERS_CSV)}
-    helpdesk_emails = {r.get("email","").strip() for r in load_csv(HELPDESK_CSV)}
-
-    # seed the pseudo helpdesk team account
     conn.execute(
         "INSERT OR IGNORE INTO Users(email, password) VALUES(?,?)",
         ("helpdeskteam@lsu.edu", hash_password("helpdeskteam")))
-
     ins = skp = 0
     for row in rows:
-        email = row.get("email","").strip()
-        pwd   = row.get("password","").strip()
-        if not email or not pwd: skp += 1; continue
+        email = row.get("email", "").strip()
+        pwd = row.get("password", "").strip()
+        if not email or not pwd:
+            skp += 1;
+            continue
         conn.execute(
             "INSERT OR IGNORE INTO Users(email, password) VALUES(?,?)",
             (email, hash_password(pwd)))
@@ -216,142 +222,361 @@ def populate_users(conn):
     conn.commit()
     print(f"Users: {ins} inserted, {skp} skipped")
 
+
 def populate_helpdesk(conn):
     rows = load_csv(HELPDESK_CSV)
-    ins  = 0
+    ins = 0
     for row in rows:
-        email = row.get("email","").strip()
-        pos   = row.get("Position", row.get("position","")).strip()
-        if not conn.execute("SELECT 1 FROM Users WHERE email=?",(email,)).fetchone(): continue
-        conn.execute("INSERT OR IGNORE INTO Helpdesk(email,position) VALUES(?,?)",(email,pos))
+        email = row.get("email", "").strip()
+        pos = row.get("Position", row.get("position", "")).strip()
+        if not conn.execute("SELECT 1 FROM Users WHERE email=?", (email,)).fetchone():
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO Helpdesk(email, position) VALUES(?,?)", (email, pos))
         ins += 1
     conn.commit()
     print(f"Helpdesk: {ins}")
 
-def populate_zipcode_and_address(conn):
-    """Seed a handful of zipcodes and return a map email→address_id for bidders."""
-    zipcodes = [
-        ("16802","State College","PA"),
-        ("70803","Baton Rouge","LA"),
-        ("10001","New York","NY"),
-        ("94103","San Francisco","CA"),
-        ("60601","Chicago","IL"),
-    ]
-    for zc,city,state in zipcodes:
+
+def populate_zipcode(conn):
+    rows = load_csv(ZIPCODE_CSV)
+    ins = 0
+    for row in rows:
+        zipcode = str(row.get("zipcode", "")).strip()
+        city = row.get("city", "").strip()
+        state = row.get("state", "").strip()
+        if not zipcode:
+            continue
         conn.execute(
-            "INSERT OR IGNORE INTO Zipcode_Info(zipcode,city,state) VALUES(?,?,?)",
-            (zc,city,state))
+            "INSERT OR IGNORE INTO Zipcode_Info(zipcode, city, state) VALUES(?,?,?)",
+            (zipcode, city, state))
+        ins += 1
     conn.commit()
+    print(f"Zipcode_Info: {ins}")
+
+
+def populate_address(conn):
+    rows = load_csv(ADDRESS_CSV)
+    ins = 0
+    for row in rows:
+        address_id = row.get("address_id", "").strip()
+        zipcode = str(row.get("zipcode", "")).strip() or None
+        street_num = str(row.get("street_num", "")).strip() or None
+        street_name = row.get("street_name", "").strip() or None
+        if not address_id:
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO Address(address_id, zipcode, street_num, street_name)"
+            " VALUES(?,?,?,?)",
+            (address_id, zipcode, street_num, street_name))
+        ins += 1
+    conn.commit()
+    print(f"Address: {ins}")
+
 
 def populate_bidders(conn):
     rows = load_csv(BIDDERS_CSV)
-    # pre-insert a default address row everyone can share
-    conn.execute(
-        "INSERT INTO Address(zipcode,street_num,street_name) VALUES(?,?,?)",
-        ("16802","1","University Dr"))
-    default_addr = conn.execute(
-        "SELECT last_insert_rowid()").fetchone()[0]
-    ins = 0
+    ins = skp = 0
     for row in rows:
-        email = row.get("email","").strip()
-        if not conn.execute("SELECT 1 FROM Users WHERE email=?",(email,)).fetchone(): continue
-        age = row.get("age","").strip()
+        email = row.get("email", "").strip()
+        first = row.get("first_name", "").strip()
+        last = row.get("last_name", "").strip()
+        age = row.get("age", "").strip()
+        addr_id = row.get("home_address_id", "").strip() or None
+        major = row.get("major", "").strip() or None
+        if not email:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Users WHERE email=?", (email,)).fetchone():
+            skp += 1;
+            continue
         conn.execute(
-            "INSERT OR IGNORE INTO Bidders(email,first_name,last_name,age,home_address_id,major)"
+            "INSERT OR IGNORE INTO Bidders"
+            "(email, first_name, last_name, age, home_address_id, major)"
             " VALUES(?,?,?,?,?,?)",
-            (email,
-             row.get("first_name","").strip(),
-             row.get("last_name","").strip(),
+            (email, first or "N/A", last or "N/A",
              int(age) if age.isdigit() else None,
-             default_addr,
-             row.get("major","").strip()))
+             addr_id, major))
         ins += 1
     conn.commit()
-    print(f"Bidders: {ins}")
+    print(f"Bidders: {ins} inserted, {skp} skipped")
+
+
+def populate_credit_cards(conn):
+    rows = load_csv(CREDIT_CARDS_CSV)
+    ins = skp = 0
+    for row in rows:
+        card_num = row.get("credit_card_num", "").strip()
+        owner = row.get("Owner_email", row.get("owner_email", "")).strip()
+        if not card_num or not owner:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Bidders WHERE email=?", (owner,)).fetchone():
+            skp += 1;
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO Credit_Cards"
+            "(credit_card_num, card_type, expire_month, expire_year, security_code, owner_email)"
+            " VALUES(?,?,?,?,?,?)",
+            (card_num,
+             row.get("card_type", "").strip() or None,
+             str(row.get("expire_month", "")).strip() or None,
+             str(row.get("expire_year", "")).strip() or None,
+             str(row.get("security_code", "")).strip() or None,
+             owner))
+        ins += 1
+    conn.commit()
+    print(f"Credit_Cards: {ins} inserted, {skp} skipped")
+
 
 def populate_sellers(conn):
     rows = load_csv(SELLERS_CSV)
-    ins  = 0
+    ins = skp = 0
     for row in rows:
-        email = row.get("email","").strip()
-        # seller must already be a bidder
-        if not conn.execute("SELECT 1 FROM Bidders WHERE email=?",(email,)).fetchone(): continue
-        try: bal = float(row.get("balance","0").strip())
-        except: bal = 0.0
+        email = row.get("email", "").strip()
+        routing = row.get("bank_routing_number", "").strip()
+        account = str(row.get("bank_account_number", "")).strip()
+        balance = row.get("balance", "0").strip()
+        if not email:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Users WHERE email=?", (email,)).fetchone():
+            skp += 1;
+            continue
+        # Sellers must also be Bidders per schema; auto-insert a minimal Bidder row
+        # for seller-only accounts (mirrors what register_seller does at runtime)
+        if not conn.execute("SELECT 1 FROM Bidders WHERE email=?", (email,)).fetchone():
+            conn.execute(
+                "INSERT OR IGNORE INTO Bidders"
+                "(email, first_name, last_name, home_address_id) VALUES(?,?,?,NULL)",
+                (email, "N/A", "N/A"))
+        try:
+            balance = float(balance) if balance else 0.0
+        except ValueError:
+            balance = 0.0
         conn.execute(
-            "INSERT OR IGNORE INTO Sellers(email,bank_routing_number,bank_account_number,balance)"
+            "INSERT OR IGNORE INTO Sellers"
+            "(email, bank_routing_number, bank_account_number, balance)"
             " VALUES(?,?,?,?)",
-            (email,
-             row.get("bank_routing_number","").strip(),
-             row.get("bank_account_number","").strip(),
-             bal))
+            (email, routing, account, balance))
         ins += 1
     conn.commit()
-    print(f"Sellers: {ins}")
+    print(f"Sellers: {ins} inserted, {skp} skipped")
+
+
+def populate_local_vendors(conn):
+    rows = load_csv(LOCAL_VENDORS_CSV)
+    ins = skp = 0
+    for row in rows:
+        email = row.get("Email", row.get("email", "")).strip()
+        biz_name = row.get("Business_Name", "").strip()
+        biz_addr = row.get("Business_Address_ID", "").strip() or None
+        phone = row.get("Customer_Service_Phone_Number", "").strip() or None
+        if not email:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Sellers WHERE email=?", (email,)).fetchone():
+            skp += 1;
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO Local_Vendors"
+            "(email, business_name, business_address_id, customer_service_phone_number)"
+            " VALUES(?,?,?,?)",
+            (email, biz_name, biz_addr, phone))
+        ins += 1
+    conn.commit()
+    print(f"Local_Vendors: {ins} inserted, {skp} skipped")
+
 
 def populate_categories(conn):
-    tree = {
-        "Electronics":         ["Laptops","Phones & Tablets","Cameras","Gaming","Audio"],
-        "Books & Media":       ["Textbooks","Fiction","Non-Fiction","Music CDs","DVDs"],
-        "Clothing & Apparel":  ["Men's","Women's","Kids'","Shoes","Accessories"],
-        "Home & Garden":       ["Furniture","Kitchen","Tools","Decor","Outdoor"],
-        "Sports & Outdoors":   ["Fitness Equipment","Bicycles","Camping","Team Sports","Water Sports"],
-        "Collectibles & Art":  ["Coins","Stamps","Trading Cards","Fine Art","Antiques"],
-        "Vehicles & Parts":    ["Cars","Motorcycles","Bicycle Parts","Car Parts","Accessories"],
-        "Musical Instruments": ["Guitars","Keyboards","Drums","Wind Instruments","Recording Gear"],
-    }
-    # top-level: parent_category = NULL
-    for parent, children in tree.items():
-        conn.execute(
-            "INSERT OR IGNORE INTO Categories(parent_category,category_name) VALUES(?,?)",
-            (None, parent))
-        for child in children:
-            conn.execute(
-                "INSERT OR IGNORE INTO Categories(parent_category,category_name) VALUES(?,?)",
-                (parent, child))
-    conn.commit()
-    count = conn.execute("SELECT COUNT(*) FROM Categories").fetchone()[0]
-    print(f"Categories: {count}")
-
-def populate_sample_listings(conn):
-    # grab a few sellers
-    sellers = [r[0] for r in conn.execute(
-        "SELECT email FROM Sellers LIMIT 10").fetchall()]
-    if not sellers:
-        print("No sellers — skipping sample listings."); return
-
-    now = datetime.now().strftime("%Y-%m-%d")
-    rng = random.Random(42)
-
-    samples = [
-        ("Laptops",          "MacBook Pro 2022 Listing",   "MacBook Pro 2022",   "16-inch M1 Pro, lightly used",   899.00, 20),
-        ("Textbooks",        "Calculus Textbook",           "Stewart Calculus 9e","Some highlighting ch1-3",        35.00,  10),
-        ("Audio",            "Sony WH-1000XM5",             "Sony Headphones",    "Noise-cancelling, one semester", 180.00, 15),
-        ("Bicycles",         "Trek 7.4 FX Bike",            "Hybrid Bike",        "24 speeds, recently tuned",      320.00, 12),
-        ("Gaming",           "Nintendo Switch OLED Bundle", "Switch OLED",        "4 games included",               280.00, 18),
-        ("Guitars",          "Yamaha FG800 Acoustic",       "Acoustic Guitar",    "Solid spruce top, gig bag",      150.00, 8),
-        ("Phones & Tablets", "iPhone 13 128GB Unlocked",    "iPhone 13",          "Battery health 91%",             420.00, 20),
-        ("Furniture",        "Dorm Futon + Cover",          "Futon",              "Black, folds flat, washable",    75.00,  10),
-        ("Cameras",          "Canon Rebel SL3 Kit",         "DSLR Camera",        "18-55mm, 2 batteries, 32GB SD",  550.00, 25),
-        ("Drums",            "Pearl Export Drum Kit",       "Full Drum Kit",      "5-piece, Zildjian cymbals",      600.00, 15),
-    ]
-
+    rows = load_csv(CATEGORIES_CSV)
     ins = 0
-    # track per-seller listing_id counter
-    seller_counters = {}
-    for i, (cat, title, name, desc, reserve, max_bids) in enumerate(samples):
-        seller = sellers[i % len(sellers)]
-        lid    = seller_counters.get(seller, 0) + 1
-        seller_counters[seller] = lid
+    for row in rows:
+        parent = row.get("parent_category", "").strip()
+        parent = None if (not parent or parent == "Root") else parent #Set to null if it is a root
+        name = row.get("category_name", "").strip()
+        if not name:
+            continue
         conn.execute(
-            "INSERT INTO Auction_Listings"
-            "(seller_email,listing_id,category,auction_title,product_name,"
-            "product_description,quantity,reserve_price,max_bids,status)"
-            " VALUES(?,?,?,?,?,?,?,?,?,1)",
-            (seller, lid, cat, title, name, desc, 1, reserve, max_bids))
+            "INSERT OR IGNORE INTO Categories(parent_category, category_name) VALUES(?,?)",
+            (parent, name))
         ins += 1
     conn.commit()
-    print(f"Sample listings: {ins}")
+    print(f"Categories: {ins}")
+
+
+def populate_listings(conn):
+    rows = load_csv(LISTINGS_CSV)
+    ins = skp = 0
+    for row in rows:
+        seller = row.get("Seller_Email", "").strip()
+        lid = row.get("Listing_ID", "").strip()
+        category = row.get("Category", "").strip() or None
+        title = row.get("Auction_Title", "").strip()
+        pname = row.get("Product_Name", "").strip() or None
+        pdesc = row.get("Product_Description", "").strip() or None
+        quantity = row.get("Quantity", "1").strip()
+        reserve = row.get("Reserve_Price", "0").strip().lstrip("$").strip()
+        maxbids = row.get("Max_bids", "1").strip()
+        status = row.get("Status", "1").strip()
+        if not seller or not lid or not title:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Sellers WHERE email=?", (seller,)).fetchone():
+            skp += 1;
+            continue
+        try:
+            lid = int(lid)
+            reserve = float(reserve) if reserve else 0.0
+            maxbids = int(maxbids) if maxbids.isdigit() else 1
+            quantity = int(quantity) if quantity.isdigit() else 1
+            status = int(status) if status.isdigit() else 1
+        except ValueError:
+            skp += 1;
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO Auction_Listings"
+            "(seller_email, listing_id, category, auction_title, product_name,"
+            " product_description, quantity, reserve_price, max_bids, status)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (seller, lid, category, title, pname, pdesc, quantity, reserve, maxbids, status))
+        ins += 1
+    conn.commit()
+    print(f"Auction_Listings: {ins} inserted, {skp} skipped")
+
+
+def populate_bids(conn):
+    rows = load_csv(BIDS_CSV)
+    ins = skp = 0
+    for row in rows:
+        seller = row.get("Seller_Email", "").strip()
+        lid = row.get("Listing_ID", "").strip()
+        bidder = row.get("Bidder_Email", "").strip()
+        price_r = row.get("Bid_Price", "").strip()
+        if not seller or not lid or not bidder or not price_r:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Bidders WHERE email=?", (bidder,)).fetchone():
+            skp += 1;
+            continue
+        try:
+            lid = int(lid)
+            price = float(price_r)
+        except ValueError:
+            skp += 1;
+            continue
+        if not conn.execute(
+                "SELECT 1 FROM Auction_Listings WHERE seller_email=? AND listing_id=?",
+                (seller, lid)
+        ).fetchone():
+            skp += 1;
+            continue
+        conn.execute(
+            "INSERT INTO Bids(seller_email, listing_id, bidder_email, bid_price)"
+            " VALUES(?,?,?,?)",
+            (seller, lid, bidder, price))
+        ins += 1
+    conn.commit()
+    print(f"Bids: {ins} inserted, {skp} skipped")
+
+
+def populate_transactions(conn):
+    rows = load_csv(TRANSACTIONS_CSV)
+    ins = skp = 0
+    for row in rows:
+        seller = row.get("Seller_Email", "").strip()
+        lid = row.get("Listing_ID", "").strip()
+        buyer = row.get("Bidder_Email", "").strip()
+        date = row.get("Date", "").strip()
+        payment = row.get("Payment", "").strip()
+        if not seller or not lid or not buyer or not date or not payment:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Bidders WHERE email=?", (buyer,)).fetchone():
+            skp += 1;
+            continue
+        try:
+            lid = int(lid)
+            payment = float(payment)
+        except ValueError:
+            skp += 1;
+            continue
+        if not conn.execute(
+                "SELECT 1 FROM Auction_Listings WHERE seller_email=? AND listing_id=?",
+                (seller, lid)
+        ).fetchone():
+            skp += 1;
+            continue
+        conn.execute(
+            "INSERT INTO Transactions(seller_email, listing_id, buyer_email, date, payment)"
+            " VALUES(?,?,?,?,?)",
+            (seller, lid, buyer, date, payment))
+        ins += 1
+    conn.commit()
+    print(f"Transactions: {ins} inserted, {skp} skipped")
+
+
+def populate_ratings(conn):
+    rows = load_csv(RATINGS_CSV)
+    ins = skp = 0
+    for row in rows:
+        bidder = row.get("Bidder_Email", "").strip()
+        seller = row.get("Seller_Email", "").strip()
+        date = row.get("Date", "").strip()
+        rating = row.get("Rating", "").strip()
+        desc = row.get("Rating_Desc", "").strip() or None
+        if not bidder or not seller or not date or not rating:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Bidders WHERE email=?", (bidder,)).fetchone():
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Sellers WHERE email=?", (seller,)).fetchone():
+            skp += 1;
+            continue
+        try:
+            rating = int(rating)
+            if not (1 <= rating <= 5):
+                raise ValueError
+        except ValueError:
+            skp += 1;
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO Rating(bidder_email, seller_email, date, rating, rating_desc)"
+            " VALUES(?,?,?,?,?)",
+            (bidder, seller, date, rating, desc))
+        ins += 1
+    conn.commit()
+    print(f"Rating: {ins} inserted, {skp} skipped")
+
+
+def populate_requests(conn):
+    rows = load_csv(REQUESTS_CSV)
+    ins = skp = 0
+    for row in rows:
+        sender = row.get("sender_email", "").strip()
+        hd_email = row.get("helpdesk_staff_email", "helpdeskteam@lsu.edu").strip()
+        req_type = row.get("request_type", "").strip()
+        req_desc = row.get("request_desc", "").strip() or None
+        status = row.get("request_status", "0").strip()
+        if not sender or not req_type:
+            skp += 1;
+            continue
+        if not conn.execute("SELECT 1 FROM Users WHERE email=?", (sender,)).fetchone():
+            skp += 1;
+            continue
+        try:
+            status = int(status)
+        except ValueError:
+            status = 0
+        conn.execute(
+            "INSERT INTO Requests"
+            "(sender_email, helpdesk_staff_email, request_type, request_desc, request_status)"
+            " VALUES(?,?,?,?,?)",
+            (sender, hd_email or "helpdeskteam@lsu.edu", req_type, req_desc, status))
+        ins += 1
+    conn.commit()
+    print(f"Requests: {ins} inserted, {skp} skipped")
 
 
 def main():
@@ -360,13 +585,20 @@ def main():
     conn.execute("PRAGMA foreign_keys = ON")
     try:
         create_tables(conn)
-        populate_zipcode_and_address(conn)
         populate_users(conn)
         populate_helpdesk(conn)
+        populate_zipcode(conn)
+        populate_address(conn)
         populate_bidders(conn)
+        populate_credit_cards(conn)
         populate_sellers(conn)
+        populate_local_vendors(conn)
         populate_categories(conn)
-        populate_sample_listings(conn)
+        populate_listings(conn)
+        populate_bids(conn)
+        populate_transactions(conn)
+        populate_ratings(conn)
+        populate_requests(conn)
 
         print("\nSample login credentials:")
         for tbl, label in [("Bidders","buyer"), ("Sellers","seller"), ("Helpdesk","helpdesk")]:
