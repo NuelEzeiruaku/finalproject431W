@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Register – NittanyAuction{% endblock %}
+{% block content %}
+<div style="max-width:580px;margin:0 auto;">
+  <div class="card text-center">
+    <h2>Create an Account</h2>
+    <p class="text-muted" style="margin-bottom:28px;">
+      Choose the account type that fits you.
+    </p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="border:1px solid #e2e8f0;border-radius:10px;padding:24px;">
+        <div style="font-size:2rem;margin-bottom:10px;">🛒</div>
+        <h3 style="margin-bottom:8px;color:#1e3a5f;">Bidder</h3>
+        <p class="text-muted" style="margin-bottom:16px;font-size:.875rem;">
+          Browse listings and bid on products as an LSU student.
+        </p>
+        <a href="{{ url_for('register_bidder') }}" class="btn btn-primary btn-sm">
+          Register as Bidder
+        </a>
+      </div>
+
+      <div style="border:1px solid #e2e8f0;border-radius:10px;padding:24px;">
+        <div style="font-size:2rem;margin-bottom:10px;">🏪</div>
+        <h3 style="margin-bottom:8px;color:#1e3a5f;">Seller</h3>
+        <p class="text-muted" style="margin-bottom:16px;font-size:.875rem;">
+          List items for auction. Account requires HelpDesk approval.
+        </p>
+        <a href="{{ url_for('register_seller') }}" class="btn btn-secondary btn-sm">
+          Register as Seller
+        </a>
+      </div>
+    </div>
+
+    <p class="text-muted mt-2" style="font-size:.85rem;">
+      Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}My Bids – NittanyAuction{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>My Bids</h2>
+  {% if bids %}
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th><th>My Bid</th><th>Top Bid</th><th>Bids</th><th>Status</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bids %}
+      <tr>
+        <td>
+          <a href="{{ url_for('product_detail', seller_email=b.seller_email, listing_id=b.listing_id) }}"
+             style="color:#1e3a5f;text-decoration:none;font-weight:bold;">
+            {{ b.auction_title }}
+          </a>
+        </td>
+        <td>${{ "%.2f"|format(b.my_bid) }}</td>
+        <td>${{ "%.2f"|format(b.top_bid) }}</td>
+        <td class="text-muted">{{ b.bid_count }}/{{ b.max_bids }}</td>
+        <td>
+          {% if b.status == 1 %}
+            {% if b.my_bid == b.top_bid %}
+              <span style="color:#16a34a;font-weight:bold;">Winning ✅</span>
+            {% else %}
+              <span style="color:#dc2626;font-weight:bold;">Outbid ❌</span>
+            {% endif %}
+          {% elif b.status == 2 and b.my_bid == b.top_bid %}
+            <span style="color:#3b82f6;font-weight:bold;">Won 🏆</span>
+          {% elif b.status == 2 %}
+            <span class="text-muted">Lost</span>
+          {% else %}
+            <span class="text-muted">Closed</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if (b.seller_email, b.listing_id) in won_keys %}
+            <a href="{{ url_for('rate_seller', seller_email=b.seller_email, listing_id=b.listing_id) }}"
+               class="btn btn-success btn-sm">Rate Seller ⭐</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">You haven't placed any bids yet.
+    <a href="{{ url_for('browse') }}">Browse auctions →</a>
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

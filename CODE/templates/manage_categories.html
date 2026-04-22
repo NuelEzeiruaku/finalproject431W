@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Manage Categories – NittanyAuction{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 340px;gap:24px;">
+  <div class="card">
+    <h2>Category Hierarchy</h2>
+    <ul style="list-style:none;padding:0;line-height:2;">
+      {% for top in tree %}
+      <li>
+        <strong>{{ top.name }}</strong>
+        {% if top.children %}
+        <ul style="list-style:disc;padding-left:20px;color:#374151;">
+          {% for c in top.children %}
+          <li style="font-size:.9rem;">{{ c.name }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 style="color:#1e3a5f;margin-bottom:16px;">Add New Category</h3>
+    <form method="post">
+      <div class="form-group">
+        <label>Category Name *</label>
+        <input type="text" name="name" required>
+        {% if errors.name %}<p class="field-error">{{ errors.name }}</p>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>Parent Category (leave blank for top-level)</label>
+        <select name="parent_id">
+          <option value="">— Top Level —</option>
+          {% for c in all_cats %}
+          <option value="{{ c.category_id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Add Category</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

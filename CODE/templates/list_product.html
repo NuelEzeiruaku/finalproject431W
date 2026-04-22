@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}List a Product – NittanyAuction{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+  <div class="card">
+    <h2>📦 List an Item for Auction</h2>
+
+    {% if errors.general %}
+      <div class="alert alert-error">{{ errors.general }}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      <p class="section-title">Item Details</p>
+      <div class="form-group">
+        <label for="title">Title *</label>
+        <input id="title" type="text" name="title"
+               value="{{ form.get('title','') }}" placeholder="Be descriptive" required>
+        {% if errors.title %}<p class="field-error">{{ errors.title }}</p>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="4"
+          style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
+                 font-size:.95rem;resize:vertical;"
+          placeholder="Condition, included accessories, pickup/shipping info…">{{ form.get('description','') }}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="category_id">Category *</label>
+        <select id="category_id" name="category_id" required>
+          <option value="">Select a category…</option>
+          {% for c in categories %}
+          <option value="{{ c.category_id }}"
+            {% if form.get('category_id')|string == c.category_id|string %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if errors.category_id %}<p class="field-error">{{ errors.category_id }}</p>{% endif %}
+      </div>
+
+      <p class="section-title">Pricing & Timing</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="reserve_price">Reserve Price ($) *</label>
+          <input id="reserve_price" type="number" name="reserve_price"
+                 step="0.01" min="0.01"
+                 value="{{ form.get('reserve_price','') }}"
+                 placeholder="Minimum you'll accept">
+          {% if errors.reserve_price %}<p class="field-error">{{ errors.reserve_price }}</p>{% endif %}
+          <p class="text-muted mt-1" style="font-size:.78rem;">
+            Hidden from buyers. Auction only sells if the top bid exceeds this.
+          </p>
+        </div>
+        <div class="form-group">
+          <label for="auction_end">Auction End Date & Time *</label>
+          <input id="auction_end" type="datetime-local" name="auction_end"
+                 value="{{ form.get('auction_end','') }}" required>
+          {% if errors.auction_end %}<p class="field-error">{{ errors.auction_end }}</p>{% endif %}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:20px;">
+        <button type="submit" class="btn btn-primary">Create Listing</button>
+        <a href="{{ url_for('seller_home') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

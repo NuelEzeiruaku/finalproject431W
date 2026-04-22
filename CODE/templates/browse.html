@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Browse – NittanyAuction{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start;">
+
+  <!-- sidebar -->
+  <div class="card" style="padding:16px;">
+    <form method="get" action="{{ url_for('browse') }}" style="margin-bottom:16px;">
+      <input type="text" name="q" placeholder="Search listings…"
+             value="{{ search }}"
+             style="width:100%;padding:8px 10px;border:1px solid #d1d5db;
+                    border-radius:6px;font-size:.9rem;box-sizing:border-box;">
+    </form>
+    <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;
+              color:#9ca3af;margin-bottom:8px;letter-spacing:.05em;">Categories</p>
+    {% for top in tree %}
+    <div style="margin-bottom:4px;">
+      <a href="{{ url_for('browse', cat=top.name) }}"
+         style="font-weight:bold;color:{% if cat==top.name %}#1e3a5f{% else %}#374151{% endif %};
+                text-decoration:none;display:block;padding:4px 0;font-size:.9rem;">
+        {{ top.name }}
+      </a>
+      {% for child in top.children %}
+      <a href="{{ url_for('browse', cat=child.name) }}"
+         style="color:{% if cat==child.name %}#1e3a5f{% else %}#6b7280{% endif %};
+                text-decoration:none;display:block;padding:2px 0 2px 12px;font-size:.82rem;
+                font-weight:{% if cat==child.name %}bold{% else %}normal{% endif %};">
+        {{ child.name }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- main -->
+  <div>
+    {% if search %}
+    <div class="card">
+      <h2>Results for "{{ search }}"</h2>
+      {% if products %}
+        <p class="text-muted" style="margin-bottom:16px;">
+          {{ products|length }} listing{{ 's' if products|length != 1 }} found
+        </p>
+        {% include "partials/product_grid.html" %}
+      {% else %}
+        <p class="text-muted">No active listings match your search.</p>
+      {% endif %}
+    </div>
+
+    {% elif not cat %}
+    <div class="card">
+      <h2>Browse Auctions</h2>
+      <p class="text-muted">Select a category on the left to explore listings.</p>
+    </div>
+
+    {% elif subcats %}
+    <div class="card">
+      <h2>{{ cat }}</h2>
+      <p class="section-title">Sub-categories</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+        {% for s in subcats %}
+        <a href="{{ url_for('browse', cat=s.category_name) }}"
+           style="display:block;padding:14px;border:1px solid #e2e8f0;border-radius:8px;
+                  text-decoration:none;color:#1e3a5f;font-weight:bold;font-size:.9rem;
+                  text-align:center;">
+          {{ s.category_name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% if products %}
+      <p class="section-title">Also in {{ cat }}</p>
+      {% include "partials/product_grid.html" %}
+      {% endif %}
+    </div>
+
+    {% else %}
+    <div class="card">
+      <h2>{{ cat }}</h2>
+      {% if products %}
+        <p class="text-muted" style="margin-bottom:16px;">
+          {{ products|length }} active listing{{ 's' if products|length != 1 }}
+        </p>
+        {% include "partials/product_grid.html" %}
+      {% else %}
+        <p class="text-muted">No active listings in this category.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

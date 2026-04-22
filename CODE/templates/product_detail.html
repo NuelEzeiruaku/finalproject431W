@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.auction_title }} – NittanyAuction{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
+  <!-- left: listing info -->
+  <div>
+    <div class="card">
+      <p class="text-muted" style="margin-bottom:4px;">{{ listing.category }}</p>
+      <h2 style="margin-bottom:4px;">{{ listing.auction_title }}</h2>
+      {% if listing.product_name %}
+        <p style="color:#374151;font-weight:600;margin-bottom:12px;">{{ listing.product_name }}</p>
+      {% endif %}
+      <p style="color:#6b7280;font-size:.9rem;margin-bottom:16px;">
+        Seller: <strong>{{ listing.seller_email }}</strong>
+        {% if listing.seller_rating_count > 0 %}
+          · ⭐ {{ "%.1f"|format(listing.seller_avg_rating) }} ({{ listing.seller_rating_count }} ratings)
+        {% else %}
+          · No ratings yet
+        {% endif %}
+      </p>
+      {% if listing.product_description %}
+        <p style="color:#374151;line-height:1.6;">{{ listing.product_description }}</p>
+      {% endif %}
+    </div>
+
+    <!-- bid history -->
+    <div class="card mt-2">
+      <h3 style="color:#1e3a5f;margin-bottom:12px;">Bid History</h3>
+      {% if bids %}
+      <table>
+        <thead><tr><th>Bidder</th><th>Amount</th></tr></thead>
+        <tbody>
+          {% for b in bids %}
+          <tr>
+            <td class="text-muted">{{ b.bidder_email }}</td>
+            <td><strong>${{ "%.2f"|format(b.bid_price) }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="text-muted">No bids yet. Be the first!</p>
+      {% endif %}
+    </div>
+
+    {% if other %}
+    <div class="card mt-2">
+      <h3 style="color:#1e3a5f;margin-bottom:12px;">More from this seller</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        {% for o in other %}
+        <a href="{{ url_for('product_detail', seller_email=listing.seller_email, listing_id=o.listing_id) }}"
+           style="color:#1e3a5f;text-decoration:none;padding:8px;border:1px solid #e2e8f0;
+                  border-radius:6px;font-size:.9rem;">
+          {{ o.auction_title }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- right: bid box -->
+  <div>
+    <div class="card">
+      <p class="text-muted" style="margin-bottom:4px;">Current top bid</p>
+      <p style="font-size:2rem;font-weight:bold;color:#1e3a5f;margin-bottom:4px;">
+        {% if listing.top_bid %}${{ "%.2f"|format(listing.top_bid) }}{% else %}No bids{% endif %}
+      </p>
+      <p class="text-muted" style="margin-bottom:4px;">
+        Reserve: ${{ "%.2f"|format(listing.reserve_price) }}
+      </p>
+      <p class="text-muted" style="margin-bottom:16px;">
+        {{ listing.bid_count }} / {{ listing.max_bids }} bids placed
+        {% if bids_left > 0 %}· <strong>{{ bids_left }} left</strong>{% else %}· <strong style="color:#dc2626;">Auction ended</strong>{% endif %}
+      </p>
+
+      {% if listing.status == 1 and bids_left > 0 %}
+        {% if role == 'buyer' %}
+          <form method="post"
+                action="{{ url_for('place_bid', seller_email=listing.seller_email, listing_id=listing.listing_id) }}">
+            <div class="form-group">
+              <label>Your bid (min ${{ "%.2f"|format(min_bid) }})</label>
+              <input type="number" name="amount" step="0.01"
+                     min="{{ min_bid }}" placeholder="{{ min_bid }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Place Bid</button>
+          </form>
+        {% elif role == 'seller' and viewer_email == listing.seller_email %}
+          <p class="text-muted" style="font-size:.85rem;">You own this listing.</p>
+          <form method="post"
+                action="{{ url_for('terminate_listing', listing_id=listing.listing_id) }}">
+            <button type="submit" class="btn btn-secondary" style="width:100%;"
+                    onclick="return confirm('Remove this listing from market?')">
+              Remove Listing
+            </button>
+          </form>
+        {% endif %}
+      {% elif listing.status == 2 %}
+        <p style="color:#16a34a;font-weight:bold;">Sold ✅</p>
+      {% else %}
+        <p style="color:#6b7280;">This auction is closed.</p>
+      {% endif %}
+
+      {% if can_rate %}
+        <a href="{{ url_for('rate_seller', seller_email=listing.seller_email, listing_id=listing.listing_id) }}"
+           class="btn btn-success" style="width:100%;margin-top:12px;">
+          Rate this Seller ⭐
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

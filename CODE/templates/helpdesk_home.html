@@ -1,23 +1,66 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>HelpDesk Welcome Page</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f7fafc; padding: 40px; }
-    .card {
-      max-width: 720px; margin: 0 auto; background: white; border: 1px solid #ddd;
-      border-radius: 12px; padding: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-    }
-    h2 { margin-top: 0; color: #b45309; }
-    p { line-height: 1.6; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Welcome HelpDesk</h2>
-    <p><strong>Email:</strong> {{ email }}</p>
-    <p>This is the helpdesk-specific welcome page shown after a successful login.</p>
+{% extends "base.html" %}
+{% block title %}HelpDesk – NittanyAuction{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>HelpDesk Dashboard 🛠</h2>
+  <p class="text-muted">{{ email }}{% if staff %} · {{ staff.position }}{% endif %}</p>
+
+  <p class="section-title">Pending Requests</p>
+  {% if pending %}
+  <table>
+    <thead>
+      <tr><th>ID</th><th>From</th><th>Type</th><th>Description</th><th>Assigned To</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for r in pending %}
+      <tr>
+        <td class="text-muted">#{{ r.request_id }}</td>
+        <td>{{ r.sender_email }}</td>
+        <td><strong>{{ r.request_type }}</strong></td>
+        <td class="text-muted">{{ r.request_desc or '—' }}</td>
+        <td class="text-muted">
+          {% if r.helpdesk_staff_email == 'helpdeskteam@lsu.edu' %}
+            Unassigned
+          {% else %}
+            {{ r.helpdesk_staff_email }}
+          {% endif %}
+        </td>
+        <td style="display:flex;gap:6px;">
+          <form method="post" action="{{ url_for('assign_request', request_id=r.request_id) }}">
+            <button type="submit" class="btn btn-secondary btn-sm">Assign to Me</button>
+          </form>
+          <form method="post" action="{{ url_for('complete_request', request_id=r.request_id) }}">
+            <button type="submit" class="btn btn-success btn-sm">Complete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">No pending requests.</p>
+  {% endif %}
+
+  <p class="section-title">Auctions Listed by Seller Major (Top 10)</p>
+  {% if marketing %}
+  <table>
+    <thead><tr><th>Major</th><th>Listings</th></tr></thead>
+    <tbody>
+      {% for row in marketing %}
+      <tr>
+        <td>{{ row.major }}</td>
+        <td>{{ row.listing_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">No data yet.</p>
+  {% endif %}
+
+  <p class="section-title">Tools</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="{{ url_for('manage_categories') }}" class="btn btn-secondary">🗂 Manage Categories</a>
   </div>
-</body>
-</html>
+</div>
+{% endblock %}

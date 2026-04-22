@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Upgrade to Seller – NittanyAuction{% endblock %}
+{% block content %}
+<div style="max-width:500px;margin:0 auto;">
+  <div class="card">
+    <h2>Upgrade to Seller</h2>
+    {% if existing %}
+      <div class="alert alert-info">
+        You already have a pending upgrade request. HelpDesk will review it soon.
+      </div>
+      <a href="{{ url_for('buyer_home') }}" class="btn btn-secondary">Back</a>
+    {% else %}
+      <p class="text-muted" style="margin-bottom:20px;">
+        Submit a request to HelpDesk to become a seller.
+        Once approved, you'll be able to list items for auction.
+      </p>
+      <form method="post">
+        <div class="form-group">
+          <label>Why do you want to become a seller? (optional)</label>
+          <textarea name="details" rows="3"
+            style="width:100%;padding:9px 12px;border:1px solid #d1d5db;
+                   border-radius:8px;font-size:.95rem;resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+          <a href="{{ url_for('buyer_home') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

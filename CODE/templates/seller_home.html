@@ -1,23 +1,78 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Seller Welcome Page</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f7fafc; padding: 40px; }
-    .card {
-      max-width: 720px; margin: 0 auto; background: white; border: 1px solid #ddd;
-      border-radius: 12px; padding: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-    }
-    h2 { margin-top: 0; color: #1d4ed8; }
-    p { line-height: 1.6; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Welcome Seller</h2>
-    <p><strong>Email:</strong> {{ email }}</p>
-    <p>This is the seller-specific welcome page shown after a successful login.</p>
+{% extends "base.html" %}
+{% block title %}Seller Dashboard – NittanyAuction{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Seller Dashboard</h2>
+  <p class="text-muted">{{ email }}</p>
+  <div style="display:flex;gap:32px;margin:16px 0;">
+    <div>
+      <p style="font-size:.85rem;color:#9ca3af;">Balance</p>
+      <p style="font-size:1.5rem;font-weight:bold;color:#059669;">
+        ${{ "%.2f"|format(seller.balance or 0) }}
+      </p>
+    </div>
+    <div>
+      <p style="font-size:.85rem;color:#9ca3af;">Avg Rating</p>
+      <p style="font-size:1.5rem;font-weight:bold;color:#1e3a5f;">
+        {% if rating_count > 0 %}
+          ⭐ {{ "%.1f"|format(avg_rating) }} ({{ rating_count }})
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+    {% if is_vendor %}
+    <div>
+      <p style="font-size:.85rem;color:#9ca3af;">Account Type</p>
+      <p style="font-size:1rem;font-weight:bold;color:#7c3aed;">Local Vendor 🏪</p>
+    </div>
+    {% endif %}
   </div>
-</body>
-</html>
+  <a href="{{ url_for('list_product') }}" class="btn btn-primary">+ New Listing</a>
+</div>
+
+<div class="card mt-2">
+  <h3 style="color:#1e3a5f;margin-bottom:16px;">My Listings</h3>
+  {% if listings %}
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th><th>Reserve</th><th>Bids</th><th>Top Bid</th><th>Status</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in listings %}
+      <tr>
+        <td>
+          <a href="{{ url_for('product_detail', seller_email=email, listing_id=l.listing_id) }}"
+             style="color:#1e3a5f;text-decoration:none;font-weight:bold;">
+            {{ l.auction_title }}
+          </a>
+        </td>
+        <td>${{ "%.2f"|format(l.reserve_price) }}</td>
+        <td>{{ l.bid_count }}/{{ l.max_bids }}</td>
+        <td>{% if l.top_bid %}${{ "%.2f"|format(l.top_bid) }}{% else %}—{% endif %}</td>
+        <td>
+          {% if l.status == 1 %}<span style="color:#16a34a;">Active</span>
+          {% elif l.status == 2 %}<span style="color:#3b82f6;">Sold</span>
+          {% else %}<span class="text-muted">Inactive</span>{% endif %}
+        </td>
+        <td>
+          {% if l.status == 1 %}
+          <form method="post"
+                action="{{ url_for('terminate_listing', listing_id=l.listing_id) }}"
+                style="display:inline;">
+            <button type="submit" class="btn btn-secondary btn-sm"
+                    onclick="return confirm('Remove this listing?')">Remove</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">No listings yet. <a href="{{ url_for('list_product') }}">Create one →</a></p>
+  {% endif %}
+</div>
+{% endblock %}

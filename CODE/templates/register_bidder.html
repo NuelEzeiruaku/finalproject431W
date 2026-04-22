@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Register as Bidder – NittanyAuction{% endblock %}
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+  <div class="card">
+    <h2>🛒 Bidder Registration</h2>
+
+    {% if errors.general %}
+      <div class="alert alert-error">{{ errors.general }}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+
+      <!-- Account credentials -->
+      <p class="section-title">Account Credentials</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">Email address *</label>
+          <input id="email" type="email" name="email"
+                 value="{{ form.get('email','') }}" required>
+          {% if errors.email %}<p class="field-error">{{ errors.email }}</p>{% endif %}
+        </div>
+        <div class="form-group"><!-- spacer --></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">Password *</label>
+          <input id="password" type="password" name="password" required>
+          {% if errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirm Password *</label>
+          <input id="confirm_password" type="password" name="confirm_password" required>
+          {% if errors.confirm_password %}
+            <p class="field-error">{{ errors.confirm_password }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Personal info -->
+      <p class="section-title">Personal Information</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="first_name">First Name *</label>
+          <input id="first_name" type="text" name="first_name"
+                 value="{{ form.get('first_name','') }}" required>
+          {% if errors.first_name %}<p class="field-error">{{ errors.first_name }}</p>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="last_name">Last Name *</label>
+          <input id="last_name" type="text" name="last_name"
+                 value="{{ form.get('last_name','') }}" required>
+          {% if errors.last_name %}<p class="field-error">{{ errors.last_name }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="age">Age</label>
+          <input id="age" type="number" name="age" min="16" max="120"
+                 value="{{ form.get('age','') }}">
+          {% if errors.age %}<p class="field-error">{{ errors.age }}</p>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="major">Major</label>
+          <input id="major" type="text" name="major"
+                 value="{{ form.get('major','') }}" placeholder="e.g. Computer Science">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input id="phone" type="tel" name="phone"
+               value="{{ form.get('phone','') }}" placeholder="555-123-4567">
+      </div>
+
+      <!-- Address -->
+      <p class="section-title">Home Address</p>
+      <div class="form-group">
+        <label for="street">Street</label>
+        <input id="street" type="text" name="street"
+               value="{{ form.get('street','') }}" placeholder="123 Main St">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="city">City</label>
+          <input id="city" type="text" name="city"
+                 value="{{ form.get('city','') }}">
+        </div>
+        <div class="form-group">
+          <label for="state">State</label>
+          <input id="state" type="text" name="state" maxlength="2"
+                 value="{{ form.get('state','') }}" placeholder="PA">
+        </div>
+      </div>
+      <div class="form-group" style="max-width:200px;">
+        <label for="zipcode">Zip Code</label>
+        <input id="zipcode" type="text" name="zipcode" maxlength="10"
+               value="{{ form.get('zipcode','') }}" placeholder="16802">
+      </div>
+
+      <!-- Credit card -->
+      <p class="section-title">Payment Information</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="card_type">Card Type</label>
+          <select id="card_type" name="card_type">
+            <option value="">Select…</option>
+            {% for ct in ["Visa","Mastercard","Discover","American Express"] %}
+              <option value="{{ ct }}"
+                {% if form.get('card_type') == ct %}selected{% endif %}>
+                {{ ct }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="card_number">Card Number *</label>
+          <input id="card_number" type="text" name="card_number"
+                 value="{{ form.get('card_number','') }}"
+                 placeholder="XXXX-XXXX-XXXX-XXXX">
+          {% if errors.card_number %}<p class="field-error">{{ errors.card_number }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="form-group" style="max-width:220px;">
+        <label for="expiration">Expiration Date</label>
+        <input id="expiration" type="text" name="expiration"
+               value="{{ form.get('expiration','') }}" placeholder="MM/YY">
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px;align-items:center;">
+        <button type="submit" class="btn btn-primary">Create Bidder Account</button>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary">Back</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

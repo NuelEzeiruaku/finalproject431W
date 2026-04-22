@@ -1,23 +1,38 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Buyer Welcome Page</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f7fafc; padding: 40px; }
-    .card {
-      max-width: 720px; margin: 0 auto; background: white; border: 1px solid #ddd;
-      border-radius: 12px; padding: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-    }
-    h2 { margin-top: 0; color: #059669; }
-    p { line-height: 1.6; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Welcome Buyer</h2>
-    <p><strong>Email:</strong> {{ email }}</p>
-    <p>This is the buyer-specific welcome page shown after a successful login.</p>
+{% extends "base.html" %}
+{% block title %}Buyer Dashboard – NittanyAuction{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+      <h2 style="margin-bottom:4px;">
+        Welcome{% if bidder %}, {{ bidder.first_name }}{% endif %}! 👋
+      </h2>
+      <p class="text-muted">Logged in as Bidder</p>
+    </div>
+    <a href="{{ url_for('browse') }}" class="btn btn-primary">Browse Auctions</a>
+    <a href="{{ url_for('request_upgrade') }}" class="btn btn-secondary">Upgrade to Seller</a>
   </div>
-</body>
-</html>
+
+  {% if bidder %}
+  <p class="section-title">Your Profile</p>
+  <div class="info-grid">
+    <div class="info-item"><label>Name</label><p>{{ bidder.first_name }} {{ bidder.last_name }}</p></div>
+    <div class="info-item"><label>Email</label><p>{{ bidder.email }}</p></div>
+    {% if bidder.major %}
+    <div class="info-item"><label>Major</label><p>{{ bidder.major }}</p></div>
+    {% endif %}
+    {% if bidder.phone %}
+    <div class="info-item"><label>Phone</label><p>{{ bidder.phone }}</p></div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <p class="section-title">Recent Listings</p>
+  {% if recent %}
+    {% set products = recent %}
+    {% include "partials/product_grid.html" %}
+  {% else %}
+    <p class="text-muted">No active listings right now. Check back soon!</p>
+  {% endif %}
+</div>
+{% endblock %}

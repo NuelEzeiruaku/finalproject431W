@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Register as Seller – NittanyAuction{% endblock %}
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+  <div class="card">
+    <h2>🏪 Seller Registration</h2>
+    <div class="alert alert-info">
+      Seller accounts require HelpDesk approval before you can list items.
+    </div>
+
+    {% if errors.general %}
+      <div class="alert alert-error">{{ errors.general }}</div>
+    {% endif %}
+
+    <form method="post" novalidate id="sellerForm">
+
+      <!-- Credentials -->
+      <p class="section-title">Account Credentials</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">Email address *</label>
+          <input id="email" type="email" name="email"
+                 value="{{ form.get('email','') }}" required>
+          {% if errors.email %}<p class="field-error">{{ errors.email }}</p>{% endif %}
+        </div>
+        <div class="form-group"><!-- spacer --></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">Password *</label>
+          <input id="password" type="password" name="password" required>
+          {% if errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirm Password *</label>
+          <input id="confirm_password" type="password" name="confirm_password" required>
+          {% if errors.confirm_password %}
+            <p class="field-error">{{ errors.confirm_password }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Banking -->
+      <p class="section-title">Banking Information</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="bank_routing_number">Bank Routing Number *</label>
+          <input id="bank_routing_number" type="text" name="bank_routing_number"
+                 value="{{ form.get('bank_routing_number','') }}">
+          {% if errors.bank_routing_number %}
+            <p class="field-error">{{ errors.bank_routing_number }}</p>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label for="bank_account_number">Bank Account Number *</label>
+          <input id="bank_account_number" type="text" name="bank_account_number"
+                 value="{{ form.get('bank_account_number','') }}">
+          {% if errors.bank_account_number %}
+            <p class="field-error">{{ errors.bank_account_number }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Vendor toggle -->
+      <p class="section-title">Seller Type</p>
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="is_local_vendor" id="vendorCheck"
+                 {% if form.get('is_local_vendor') %}checked{% endif %}
+                 onchange="toggleVendorFields()">
+          I am a local business vendor
+        </label>
+      </div>
+
+      <!-- Vendor-only fields -->
+      <div id="vendorFields" style="display:{% if form.get('is_local_vendor') %}block{% else %}none{% endif %};">
+        <div class="form-group">
+          <label for="business_name">Business Name *</label>
+          <input id="business_name" type="text" name="business_name"
+                 value="{{ form.get('business_name','') }}">
+          {% if errors.business_name %}
+            <p class="field-error">{{ errors.business_name }}</p>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label for="business_address">Business Address *</label>
+          <input id="business_address" type="text" name="business_address"
+                 value="{{ form.get('business_address','') }}">
+          {% if errors.business_address %}
+            <p class="field-error">{{ errors.business_address }}</p>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label for="customer_service_phone">Customer Service Phone *</label>
+          <input id="customer_service_phone" type="tel" name="customer_service_phone"
+                 value="{{ form.get('customer_service_phone','') }}">
+          {% if errors.customer_service_phone %}
+            <p class="field-error">{{ errors.customer_service_phone }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px;align-items:center;">
+        <button type="submit" class="btn btn-primary">Submit Seller Application</button>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary">Back</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleVendorFields() {
+  const show = document.getElementById("vendorCheck").checked;
+  document.getElementById("vendorFields").style.display = show ? "block" : "none";
+}
+</script>
+{% endblock %}
