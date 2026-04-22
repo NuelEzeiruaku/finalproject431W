@@ -12,38 +12,33 @@
     <form method="post" novalidate>
       <p class="section-title">Item Details</p>
       <div class="form-group">
-        <label for="auction_title">Auction Title *</label>
-        <input id="auction_title" type="text" name="auction_title"
-               value="{{ form.get('auction_title','') }}" placeholder="Be descriptive" required>
-        {% if errors.auction_title %}<p class="field-error">{{ errors.auction_title }}</p>{% endif %}
+        <label for="title">Title *</label>
+        <input id="title" type="text" name="title"
+               value="{{ form.get('title','') }}" placeholder="Be descriptive" required>
+        {% if errors.title %}<p class="field-error">{{ errors.title }}</p>{% endif %}
       </div>
       <div class="form-group">
-        <label for="product_name">Product Name</label>
-        <input id="product_name" type="text" name="product_name"
-               value="{{ form.get('product_name','') }}" placeholder="Short product name">
-      </div>
-      <div class="form-group">
-        <label for="product_description">Description</label>
-        <textarea id="product_description" name="product_description" rows="4"
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="4"
           style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
                  font-size:.95rem;resize:vertical;"
-          placeholder="Condition, included accessories, pickup/shipping info…">{{ form.get('product_description','') }}</textarea>
+          placeholder="Condition, included accessories, pickup/shipping info…">{{ form.get('description','') }}</textarea>
       </div>
       <div class="form-group">
-        <label for="category">Category *</label>
-        <select id="category" name="category" required>
+        <label for="category_id">Category *</label>
+        <select id="category_id" name="category_id" required>
           <option value="">Select a category…</option>
           {% for c in categories %}
-          <option value="{{ c.category_name }}"
-            {% if form.get('category') == c.category_name %}selected{% endif %}>
-            {{ c.category_name }}
+          <option value="{{ c.category_id }}"
+            {% if form.get('category_id')|string == c.category_id|string %}selected{% endif %}>
+            {{ c.name }}
           </option>
           {% endfor %}
         </select>
-        {% if errors.category %}<p class="field-error">{{ errors.category }}</p>{% endif %}
+        {% if errors.category_id %}<p class="field-error">{{ errors.category_id }}</p>{% endif %}
       </div>
 
-      <p class="section-title">Pricing & Bids</p>
+      <p class="section-title">Pricing & Timing</p>
       <div class="form-row">
         <div class="form-group">
           <label for="reserve_price">Reserve Price ($) *</label>
@@ -57,11 +52,10 @@
           </p>
         </div>
         <div class="form-group">
-          <label for="max_bids">Max Bids *</label>
-          <input id="max_bids" type="number" name="max_bids" min="1"
-                 value="{{ form.get('max_bids','') }}"
-                 placeholder="How many bids before auction closes">
-          {% if errors.max_bids %}<p class="field-error">{{ errors.max_bids }}</p>{% endif %}
+          <label for="auction_end">Auction End Date & Time *</label>
+          <input id="auction_end" type="datetime-local" name="auction_end"
+                 value="{{ form.get('auction_end','') }}" required>
+          {% if errors.auction_end %}<p class="field-error">{{ errors.auction_end }}</p>{% endif %}
         </div>
       </div>
 

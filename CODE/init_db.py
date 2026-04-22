@@ -22,6 +22,7 @@ def create_tables(conn):
     cur = conn.cursor()
     cur.execute("PRAGMA foreign_keys = OFF")
     drop_order = [
+        "Promotions", "Watchlist",
         "Rating", "Transactions", "Bids", "Auction_Listings",
         "Categories", "Local_Vendors", "Sellers", "Credit_Cards",
         "Bidders", "Address", "Zipcode_Info", "Requests",
@@ -162,6 +163,30 @@ def create_tables(conn):
             rating       INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
             rating_desc  TEXT,
             PRIMARY KEY (bidder_email, seller_email, date)
+        )""")
+
+    cur.execute("""
+        CREATE TABLE Watchlist (
+            buyer_email  TEXT NOT NULL REFERENCES Bidders(email),
+            seller_email TEXT NOT NULL,
+            listing_id   INTEGER NOT NULL,
+            created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (buyer_email, seller_email, listing_id),
+            FOREIGN KEY (seller_email, listing_id)
+                REFERENCES Auction_Listings(seller_email, listing_id)
+        )""")
+
+    cur.execute("""
+        CREATE TABLE Promotions (
+            seller_email TEXT NOT NULL,
+            listing_id   INTEGER NOT NULL,
+            promoted_by  TEXT NOT NULL REFERENCES Sellers(email),
+            promo_text   TEXT,
+            active       INTEGER DEFAULT 1,
+            created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (seller_email, listing_id),
+            FOREIGN KEY (seller_email, listing_id)
+                REFERENCES Auction_Listings(seller_email, listing_id)
         )""")
 
     conn.commit()

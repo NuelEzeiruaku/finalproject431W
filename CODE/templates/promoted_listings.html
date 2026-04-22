@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Promoted Listings – NittanyAuction{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Promoted Listings</h2>
+  {% if products %}
+    {% set products = products %}
+    {% include "partials/product_grid.html" %}
+  {% else %}
+    <p class="text-muted">No promoted listings right now.</p>
+  {% endif %}
+</div>
+{% endblock %}

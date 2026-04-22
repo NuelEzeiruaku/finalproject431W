@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}My Watchlist – NittanyAuction{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>My Watchlist</h2>
+  {% if items %}
+    {% set products = items %}
+    {% include "partials/product_grid.html" %}
+  {% else %}
+    <p class="text-muted">You have no saved items yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

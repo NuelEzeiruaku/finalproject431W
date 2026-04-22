@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Auction Promotion – NittanyAuction{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Promotion Manager</h2>
+  {% if listings %}
+  <table>
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Reserve</th>
+        <th>Status</th>
+        <th>Promotion</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in listings %}
+      <tr>
+        <td>{{ l.auction_title }}</td>
+        <td>{{ l.category }}</td>
+        <td>${{ "%.2f"|format(l.reserve_price) }}</td>
+        <td>
+          {% if l.status == 1 %}Active
+          {% elif l.status == 2 %}Sold
+          {% else %}Inactive{% endif %}
+        </td>
+        <td>
+          {% if l.active == 1 %}
+            <span style="color:#7c3aed;font-weight:bold;">Promoted</span>
+          {% else %}
+            <span class="text-muted">Not promoted</span>
+          {% endif %}
+        </td>
+        <td style="display:flex;gap:8px;">
+          {% if l.active == 1 %}
+          <form method="post" action="{{ url_for('unpromote_listing', listing_id=l.listing_id) }}">
+            <button type="submit" class="btn btn-secondary btn-sm">Unpromote</button>
+          </form>
+          {% else %}
+          <form method="post" action="{{ url_for('promote_listing', listing_id=l.listing_id) }}">
+            <input type="hidden" name="promo_text" value="Featured listing">
+            <button type="submit" class="btn btn-success btn-sm">Promote</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">No listings available.</p>
+  {% endif %}
+</div>
+{% endblock %}

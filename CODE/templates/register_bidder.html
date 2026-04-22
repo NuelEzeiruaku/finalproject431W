@@ -66,20 +66,18 @@
                  value="{{ form.get('major','') }}" placeholder="e.g. Computer Science">
         </div>
       </div>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input id="phone" type="tel" name="phone"
+               value="{{ form.get('phone','') }}" placeholder="555-123-4567">
+      </div>
 
       <!-- Address -->
       <p class="section-title">Home Address</p>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="street_num">Street Number</label>
-          <input id="street_num" type="text" name="street_num"
-                 value="{{ form.get('street_num','') }}" placeholder="123">
-        </div>
-        <div class="form-group">
-          <label for="street_name">Street Name</label>
-          <input id="street_name" type="text" name="street_name"
-                 value="{{ form.get('street_name','') }}" placeholder="Main St">
-        </div>
+      <div class="form-group">
+        <label for="street">Street</label>
+        <input id="street" type="text" name="street"
+               value="{{ form.get('street','') }}" placeholder="123 Main St">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -115,29 +113,17 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="credit_card_num">Card Number *</label>
-          <input id="credit_card_num" type="text" name="credit_card_num"
-                 value="{{ form.get('credit_card_num','') }}"
+          <label for="card_number">Card Number *</label>
+          <input id="card_number" type="text" name="card_number"
+                 value="{{ form.get('card_number','') }}"
                  placeholder="XXXX-XXXX-XXXX-XXXX">
-          {% if errors.credit_card_num %}<p class="field-error">{{ errors.credit_card_num }}</p>{% endif %}
+          {% if errors.card_number %}<p class="field-error">{{ errors.card_number }}</p>{% endif %}
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="expire_month">Expire Month</label>
-          <input id="expire_month" type="text" name="expire_month"
-                 value="{{ form.get('expire_month','') }}" placeholder="MM" maxlength="2">
-        </div>
-        <div class="form-group">
-          <label for="expire_year">Expire Year</label>
-          <input id="expire_year" type="text" name="expire_year"
-                 value="{{ form.get('expire_year','') }}" placeholder="YY" maxlength="2">
-        </div>
-        <div class="form-group">
-          <label for="security_code">Security Code</label>
-          <input id="security_code" type="text" name="security_code"
-                 value="{{ form.get('security_code','') }}" placeholder="CVV" maxlength="4">
-        </div>
+      <div class="form-group" style="max-width:220px;">
+        <label for="expiration">Expiration Date</label>
+        <input id="expiration" type="text" name="expiration"
+               value="{{ form.get('expiration','') }}" placeholder="MM/YY">
       </div>
 
       <div style="display:flex;gap:12px;margin-top:24px;align-items:center;">

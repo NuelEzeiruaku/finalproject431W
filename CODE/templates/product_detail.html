@@ -107,6 +107,16 @@
           Rate this Seller ⭐
         </a>
       {% endif %}
+
+      {% if role == 'buyer' %}
+        <form method="post"
+              action="{{ url_for('add_to_watchlist', seller_email=listing.seller_email, listing_id=listing.listing_id) }}"
+              style="margin-top:10px;">
+          <button type="submit" class="btn btn-secondary" style="width:100%;">
+            + Add to Watchlist
+          </button>
+        </form>
+      {% endif %}
     </div>
   </div>
 </div>

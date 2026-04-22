@@ -615,8 +615,12 @@ def product_detail(seller_email, listing_id):
 
 @app.route("/product/<seller_email>/<int:listing_id>/bid", methods=["POST"])
 def place_bid(seller_email, listing_id):
-    email = require_role("buyer")
-    if not email: return redirect(url_for("login"))
+    email, role = current_user()
+    if not email:
+        return redirect(url_for("login"))
+    if role != "buyer":
+        flash("Only registered buyers can place bids.", "error")
+        return redirect(url_for("product_detail", seller_email=seller_email, listing_id=listing_id))
     conn    = get_db()
     listing = conn.execute(
         "SELECT * FROM Auction_Listings WHERE seller_email=? AND listing_id=? AND status=1",
@@ -851,6 +855,156 @@ def manage_categories():
     conn.close()
     return render_template("manage_categories.html",
         tree=tree, all_cats=all_cats, errors=errors)
+
+
+
+
+# ── extra credit: category request ───────────────────────────────────────────
+
+@app.route("/request-category", methods=["GET","POST"])
+def request_category():
+    email = require_role("buyer","seller")
+    if not email: return redirect(url_for("login"))
+    if request.method == "POST":
+        category_name = request.form.get("category_name","").strip()
+        if not category_name:
+            flash("Category name is required.", "error")
+            return render_template("request_category.html")
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO Requests(sender_email,helpdesk_staff_email,request_type,request_desc,request_status)"
+            " VALUES(?,?,?,?,0)",
+            (email, "helpdeskteam@lsu.edu", "AddCategory", category_name))
+        conn.commit(); conn.close()
+        flash("Category request submitted. HelpDesk will review it.", "success")
+        return redirect(url_for("home"))
+    return render_template("request_category.html")
+
+
+# ── extra credit: watchlist ───────────────────────────────────────────────────
+
+@app.route("/watchlist")
+def watchlist():
+    email = require_role("buyer")
+    if not email: return redirect(url_for("login"))
+    conn = get_db()
+    items = conn.execute("""
+        SELECT al.seller_email, al.listing_id, al.auction_title, al.category,
+               al.reserve_price, al.max_bids,
+               (SELECT COUNT(*) FROM Bids b
+                WHERE b.seller_email=al.seller_email AND b.listing_id=al.listing_id) AS bid_count,
+               (SELECT MAX(bid_price) FROM Bids b
+                WHERE b.seller_email=al.seller_email AND b.listing_id=al.listing_id) AS top_bid
+        FROM Watchlist w
+        JOIN Auction_Listings al
+          ON w.seller_email=al.seller_email AND w.listing_id=al.listing_id
+        WHERE w.buyer_email=?
+        ORDER BY w.created_at DESC
+    """,(email,)).fetchall()
+    conn.close()
+    return render_template("watchlist.html", items=items)
+
+@app.route("/watchlist/add/<seller_email>/<int:listing_id>", methods=["POST"])
+def add_to_watchlist(seller_email, listing_id):
+    email = require_role("buyer")
+    if not email: return redirect(url_for("login"))
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO Watchlist(buyer_email,seller_email,listing_id) VALUES(?,?,?)",
+            (email, seller_email, listing_id))
+        conn.commit()
+        flash("Added to watchlist.", "success")
+    except Exception as ex:
+        flash(f"Could not add to watchlist: {ex}", "error")
+    conn.close()
+    return redirect(url_for("product_detail", seller_email=seller_email, listing_id=listing_id))
+
+@app.route("/watchlist/remove/<seller_email>/<int:listing_id>", methods=["POST"])
+def remove_from_watchlist(seller_email, listing_id):
+    email = require_role("buyer")
+    if not email: return redirect(url_for("login"))
+    conn = get_db()
+    conn.execute(
+        "DELETE FROM Watchlist WHERE buyer_email=? AND seller_email=? AND listing_id=?",
+        (email, seller_email, listing_id))
+    conn.commit(); conn.close()
+    flash("Removed from watchlist.", "success")
+    return redirect(url_for("product_detail", seller_email=seller_email, listing_id=listing_id))
+
+
+# ── extra credit: auction promotion ──────────────────────────────────────────
+
+@app.route("/promoted")
+def promoted_listings():
+    email = require_role("buyer","seller","helpdesk")
+    if not email: return redirect(url_for("login"))
+    conn = get_db()
+    products = conn.execute("""
+        SELECT al.seller_email, al.listing_id, al.auction_title, al.category,
+               al.reserve_price, al.max_bids,
+               (SELECT COUNT(*) FROM Bids b
+                WHERE b.seller_email=al.seller_email AND b.listing_id=al.listing_id) AS bid_count,
+               (SELECT MAX(bid_price) FROM Bids b
+                WHERE b.seller_email=al.seller_email AND b.listing_id=al.listing_id) AS top_bid
+        FROM Promotions p
+        JOIN Auction_Listings al
+          ON p.seller_email=al.seller_email AND p.listing_id=al.listing_id
+        WHERE p.active=1 AND al.status=1
+        ORDER BY p.created_at DESC
+    """).fetchall()
+    conn.close()
+    return render_template("promoted_listings.html", products=products)
+
+@app.route("/seller/promotions")
+def seller_promotions():
+    email = require_role("seller")
+    if not email: return redirect(url_for("login"))
+    conn = get_db()
+    listings = conn.execute("""
+        SELECT al.listing_id, al.auction_title, al.category, al.reserve_price, al.status,
+               p.active, p.promo_text
+        FROM Auction_Listings al
+        LEFT JOIN Promotions p
+          ON al.seller_email=p.seller_email AND al.listing_id=p.listing_id
+        WHERE al.seller_email=?
+        ORDER BY al.listing_id DESC
+    """,(email,)).fetchall()
+    conn.close()
+    return render_template("seller_promotions.html", listings=listings)
+
+@app.route("/seller/promote/<int:listing_id>", methods=["POST"])
+def promote_listing(listing_id):
+    email = require_role("seller")
+    if not email: return redirect(url_for("login"))
+    promo_text = request.form.get("promo_text","").strip() or "Featured listing"
+    conn = get_db()
+    exists = conn.execute(
+        "SELECT 1 FROM Auction_Listings WHERE seller_email=? AND listing_id=?",
+        (email, listing_id)).fetchone()
+    if not exists:
+        flash("Listing not found.", "error")
+        conn.close()
+        return redirect(url_for("seller_promotions"))
+    conn.execute("""
+        INSERT OR REPLACE INTO Promotions(seller_email,listing_id,promoted_by,promo_text,active)
+        VALUES(?,?,?,?,1)
+    """,(email, listing_id, email, promo_text))
+    conn.commit(); conn.close()
+    flash("Listing promoted! It will now appear on the Promoted Listings page.", "success")
+    return redirect(url_for("seller_promotions"))
+
+@app.route("/seller/unpromote/<int:listing_id>", methods=["POST"])
+def unpromote_listing(listing_id):
+    email = require_role("seller")
+    if not email: return redirect(url_for("login"))
+    conn = get_db()
+    conn.execute(
+        "UPDATE Promotions SET active=0 WHERE seller_email=? AND listing_id=?",
+        (email, listing_id))
+    conn.commit(); conn.close()
+    flash("Promotion removed.", "success")
+    return redirect(url_for("seller_promotions"))
 
 
 if __name__ == "__main__":
