@@ -25,15 +25,15 @@
     <form method="post">
       <div class="form-group">
         <label>Category Name *</label>
-        <input type="text" name="name" required>
+        <input type="text" name="category_name" required>
         {% if errors.name %}<p class="field-error">{{ errors.name }}</p>{% endif %}
       </div>
       <div class="form-group">
         <label>Parent Category (leave blank for top-level)</label>
-        <select name="parent_id">
+        <select name="parent_category">
           <option value="">— Top Level —</option>
           {% for c in all_cats %}
-          <option value="{{ c.category_id }}">{{ c.name }}</option>
+          <option value="{{ c.category_name }}">{{ c.category_name }}</option>
           {% endfor %}
         </select>
       </div>
